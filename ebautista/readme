@@ -4,3 +4,6 @@ npm i puppeteer
 The following modules are needed to run the app:
 npm i csv-parser
 npm i csv-writer
+
+To execute script
+node getVariableValues.js
