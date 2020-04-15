@@ -1,0 +1,35 @@
+require 'watir'
+require 'csv'
+
+def adobeAnalyticsTest
+now = Time.new.strftime("%Y-%m-%d %H:%M:%S")
+CSV.foreach("files/input/urls.csv") do |url|
+  browser = Watir::Browser.new
+  browser.goto(url[0])
+  pageUrlToFile(now,url[0])
+  Watir::Wait.until { browser.execute_script("return document.readyState") == "complete" }
+    CSV.foreach("files/input/analyticsVariables.csv" ,{ :col_sep => ";" }) do |variable|
+      begin
+        value = browser.execute_script("return s." + variable[0] +"")
+        variableToFile(now,variable[0],value)
+      rescue
+        variableToFile(now,variable[0],"Fail")
+      end
+    end
+  browser.close
+  end
+end
+
+def variableToFile (date,variableName, variableValue)
+  CSV.open("files/output/"+date+".csv",'a') do |csv|
+    csv << [" ",variableName, variableValue]
+  end
+end
+
+def pageUrlToFile (date,pageUrl)
+  CSV.open("files/output/"+date+".csv",'a') do |csv|
+    csv << [pageUrl]
+  end
+end
+
+adobeAnalyticsTest
