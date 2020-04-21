@@ -11,6 +11,9 @@ ${VARS_FILE}         vars.csv
 ${URLS_FILE}         urls.csv
 ${RESULT_FILE}       result.csv
 ${START_URL}         about:blank
+${ERROR_VALUE}       Error
+${PASS}              PASS
+${WAIT_CONDITION}    return document.readyState == "complete"
 
 
 *** Test Cases ***
@@ -21,19 +24,20 @@ Read variables from urls
     Should Not Be Empty    @{vars}
     Should Not Be Empty    @{urls}
     Open Browser           ${START_URL}     ${BROWSER}
-    #Press Keys             None             F12
     Urls Loop              ${urls}          ${vars}
-    Log File               ${RESULTS_FILE}
+    Log File               ${RESULT_FILE}
 
 
 *** Keywords ***
 Urls Loop
     [Arguments]     ${urls}     ${vars}
     Remove File     ${RESULT_FILE}
-    :FOR    ${url}  IN  @{urls}
-    \  Go To            ${url}
-    \  Append To File   ${RESULT_FILE}      ${url}\n
-    \  Vars Loop        ${url}  @{vars}
+    :FOR    ${url}  IN       @{urls}
+    \  Go To                 ${url}
+    \  ${status}             ${return}=                     Run Keyword And Ignore Error     Wait For Condition   ${WAIT_CONDITION}
+    \  Continue For Loop If  "${status}" != "${PASS}"
+    \  Append To File        ${RESULT_FILE}      ${url}\n
+    \  Vars Loop             ${url}  @{vars}
 
 Vars Loop
     [Arguments]     ${url}  @{vars}
@@ -55,4 +59,6 @@ Read variable
     [Arguments]     ${variable}
     [Return]        ${value}
 
-    ${value}        Execute Java Script     ${variable}
+    ${status}   ${value} =      Run Keyword And Ignore Error    Execute Java Script     return ${variable}
+    ${error}=   Run Keyword If  "${status}" != "${PASS}"        Get Line                ${value}            0
+    Return From Keyword If      "${status}" != "${PASS}"        ${ERROR_VALUE},${error}
